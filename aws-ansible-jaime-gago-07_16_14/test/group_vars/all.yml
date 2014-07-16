@@ -1,0 +1,194 @@
+---
+##############################################
+## NOT OPERATIONAL FOOBAR VALUES FOR DEMO ONLY
+##############################################
+#
+### test account Playbooks vars
+
+### Vars available everywhere
+
+#
+# VPC description
+us_east_1_vpc_description: "test_us_east"
+
+# Dedicated s3 bucket/key used to prevent wrong environment AWS keys
+test_ansible_check_bucket: "ansible_test"
+test_ansible_check_key: "ansible_check_test"
+
+#AMIs
+amis:
+  us_east_1:
+    pvm: "ami-1234abcd"
+    hvm: "ami-1234abcd"
+# Routes
+routes:
+  corp:
+    network: "10.10.10.10/16"
+    gw: "pxc-1234abcd"
+  prod:
+    network: "10.10.10.10/16"
+    gw: "pxc-1234abcd"
+
+# Subnets
+subnets:
+  us_east_1:
+    cidr_block: "10.10.10.10/16"
+    a_main_test:
+      cidr: "10.10.10.10/24"
+      az: "us-east-1a"
+      name: "test_us-east-1a.0_main_test_subnet"
+    d_main_test:
+      cidr: "10.10.11.11/24"
+      az: "us-east-1d"
+      name: "test_us-east-1d.0_main_test_subnet"
+
+# Security groups
+security_groups:
+  us_east_1:
+    default:
+      name: "test_us-east-1.0_default"
+      description: "Default"
+    test:
+      name: "test_us-east-1.0_test"
+      description: "Test security group"
+
+# Service ports
+service_ports:
+  puppet:
+    http: 80
+    service: 8140
+  service_foo:
+    http: 80
+    application: 8080
+
+# Particular IPs (e.g. office)
+particular_ips:
+  foo:
+    bar: "123.123.123.123/32"
+
+# CloudWatch Alarms
+alarms:
+  elb:
+    namespace: "AWS/ELB"
+
+    unhealthy_hosts_high:
+      comparison: ">="
+      threshold: 1
+      statistic: "Average"
+      metric: "UnHealthyHostCount"
+      period: 60
+      evaluation_periods: 5
+      name: "alarm.unhealthy-hosts-high"
+
+    latency_high:
+      comparison: ">="
+      threshold: "0.1"
+      statistic: "Average"
+      metric: "Latency"
+      period: 60
+      evaluation_periods: 5
+      name: "alarm.latency-high"
+
+    elb_http_5xx_codes:
+      comparison: ">="
+      threshold: "10"
+      statistic: "Average"
+      metric: "HTTPCode_ELB_5XX"
+      period: 60
+      evaluation_periods: 5
+      name: "alarm.elb-http-5xx-codes"
+
+    backend_http_5xx_codes:
+      comparison: ">="
+      threshold: "10"
+      statistic: "Average"
+      metric: "HTTPCode_Backend_5XX"
+      period: 60
+      evaluation_periods: 5
+      name: "alarm.backend-http-5xx-codes"
+
+################################################################################
+#                      Elastic Load Balancers (ELB)                            #
+################################################################################
+elbs:
+  certificates:
+    wild_foobar_com:
+      corp: "arn:aws:iam::123456789123:server-certificate/wild.foobar.com"
+      prod: "arn:aws:iam::123456789123:server-certificate/wild.foobar.com"
+
+  us_east_1:
+
+    service_foo:
+      health_check:
+        interval: 6
+        ping_path: "/ping.html"
+        threshold:
+          healthy: 2
+          unhealthy: 2
+        timeout: 5
+      name: "service foo"
+
+
+  eu_west_1:
+
+    service_foo:
+      health_check:
+        interval: 6
+        ping_path: "/ping.html"
+        threshold:
+          healthy: 2
+          unhealthy: 2
+        timeout: 5
+      name: "service foo"
+
+################################################################################
+#                            EC2 Instances                                     #
+################################################################################
+instances:
+  ansible_managed:
+    tag: "true"
+
+  service_bar:
+    apps_tag: "some_metadata_used_for_automation_downstream_with_puppet"
+    count: 1
+    eip: "123.123.123.123" # hard coded EIP (dynamic would be nicer)
+    cidr_eip: "123.123.123.123/32" # Security groups need CIDR
+    name_tag: "some.box.com"
+    type: "i2.xlarge"
+    user_data: "apps=some_metadata_used_for_automation_downstream_with_puppet hostname=foo environment=prod"
+
+  service_foo:
+    # Uses ASG so no count apps_tag needed
+    type: "c3.2xlarge"
+    user_data: "apps=some_metadata_used_for_automation_downstream_with_puppet hostname=bar environment=prod"
+
+################################################################################
+#   Simple Notification Service (SNS) Topics Amazon Resource Names (ARN)       #
+################################################################################
+sns_topics_arns:
+  us_east_1:
+    pager_duty: "arn:aws:sns:us-east-1:123456789123:PagerDuty-CloudWatch"
+
+################################################################################
+#                       Autoscaling Groups (ASG)                               #
+################################################################################
+autoscaling_groups:
+  us_east_1:
+
+    service_foo:
+      name: "asg_service_foo"
+      alarm:
+        evaluation_periods: 3
+        period: 60
+        threshold:
+          high: "80.0"
+          low: "40.0"
+      policy:
+        cooldown: 300
+        scale_down_adjustment: -1
+        scale_up_adjustment: 1
+      size:
+        desired: 2
+        max: 4
+        min: 2
+

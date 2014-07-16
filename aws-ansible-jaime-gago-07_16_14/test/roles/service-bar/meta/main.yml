@@ -1,0 +1,4 @@
+---
+dependencies:
+ - { role: network-us-east-1 }
+ - { role: security-groups-us-east-1 }

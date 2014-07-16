@@ -1,0 +1,3 @@
+---
+- include: network-us-east-1.yml
+- include: network-us-west-1.yml

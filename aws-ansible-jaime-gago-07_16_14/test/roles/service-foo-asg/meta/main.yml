@@ -1,0 +1,8 @@
+---
+dependencies:
+  - { role: network-us-east-1 }
+  - { role: security-groups-us-east-1 }
+  - { role: network-eu-west-1 }
+  - { role: security-groups-eu-west-1 }
+  - { role: network-us-west-1 }
+  - { role: security-groups-us-west-1 }

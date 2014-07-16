@@ -1,0 +1,3 @@
+---
+dependencies:
+  - { role: network-us-east-1 }

@@ -1,0 +1,45 @@
+---
+- name: "VPC - TEST US EAST 1"
+  ec2_vpc:
+    state: "present"
+    region: "us-east-1"
+    cidr_block: "{{ subnets.us_east_1.cidr_block }}"
+    internet_gateway: True
+    resource_tags:
+      Name: "test_us-east-1.0"
+    subnets:
+      - cidr: "{{ subnets.us_east_1.a_main_test.cidr }}"
+        az: "{{ subnets.us_east_1.a_main_test.az }}"
+
+      - cidr: "{{ subnets.us_east_1.d_main_test.cidr }}"
+        az: "{{ subnets.us_east_1.d_main_test.az }}"
+    route_tables:
+      - subnets:
+        - "{{ subnets.us_east_1.main_test.cidr }}"
+        routes:
+          - dest: "0.0.0.0/0"
+            gw: "igw"
+          - dest: "{{ routes.corp.network }}"
+            gw: "{{ routes.corp.gw }}"
+          - dest: "{{ routes.prod.network }}"
+            gw: "{{ routes.prod.gw }}"
+
+  register: "vpc"
+
+- name: "Write out a temporary file for mapping subnet to id"
+  template: >
+          src=subnet_id.j2
+          dest=/tmp/subnet_id
+  always_run: True
+
+- include_vars: "/tmp/subnet_id"
+  always_run: True
+
+- name: "Delete temp subnet ids file"
+  file: >
+    path=/tmp/subnet_id
+  always_run: True
+
+- name: "Set the VPC id as a fact"
+  set_fact:
+    us_east_1_test_vpc_id: "{{ vpc.vpc_id }}"

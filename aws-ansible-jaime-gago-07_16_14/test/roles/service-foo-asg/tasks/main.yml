@@ -1,0 +1,139 @@
+---
+################################################################################
+#                            US East 1                                         #
+################################################################################
+
+# US East 1 ELBs
+- name: "US East 1 ELB Service FOO"
+  ec2_elb_lb:
+    health_check:
+      healthy_threshold: "{{ elbs.us_east_1.service_foo.health_check.threshold.healthy }}"
+      interval: "{{ elbs.us_east_1.service_foo.health_check.interval }}"
+      ping_path: "{{ elbs.us_east_1.service_foo.health_check.ping_path }}"
+      ping_port: "{{ service_ports.service_foo.application }}"
+      ping_protocol: "http"
+      response_timeout: "{{ elbs.us_east_1.service_foo.health_check.timeout }}"
+      unhealthy_threshold: "{{ elbs.us_east_1.service_foo.health_check.threshold.unhealthy }}"
+    listeners:
+      - instance_port: "{{ service_ports.service_foo.application }}"
+        load_balancer_port: "{{ service_ports.service_foo.application }}"
+        protocol: "http"
+      - instance_port: "{{ service_ports.service_foo.http }}"
+        protocol: "http"
+        load_balancer_port: "{{ service_ports.service_foo.http }}"
+    name: "{{ elbs.us_east_1.service_foo.name }}"
+    region: "us-east-1"
+    security_group_ids:
+      - "{{ sec_group_us_east_1_0_elb_service_foo.group_id }}"
+    state: "present"
+    # THIS IS THE REASON WE NEED THE TEMPLATE TRICK MAPPING
+    vpc_subnet_ids:
+      - "{{ subnet_maps_us_east_1[subnets.us_east_1.a_main_test.cidr] }}"
+      - "{{ subnet_maps_us_east_1[subnets.us_east_1.d_main_test.cidr] }}"
+  register: "us_east_1_elb_service_foo"
+  tags:
+    - "us-east-1"
+
+# US East 1 ELB Alarms
+- name: "US East 1 ELB Service FOO Alarm: Unhealthy Host Count"
+  ec2_metric_alarm:
+    region: "us-east-1"
+    alarm_actions: "{{ sns_topics_arns.us_east_1.pager_duty }}"
+    namespace: "{{ alarms.elb.namespace }}"
+    state: "present"
+    name: "{{ elbs.us_east_1.service_foo.name }}.{{ alarms.elb.unhealthy_hosts_high.name }}"
+    dimensions: "LoadBalancerName={{ elbs.us_east_1.service_foo.name }}"
+    threshold: "{{ alarms.elb.unhealthy_hosts_high.threshold }}"
+    comparison: "{{ alarms.elb.unhealthy_hosts_high.comparison }}"
+    statistic : "{{ alarms.elb.unhealthy_hosts_high.statistic }}"
+    metric: "{{ alarms.elb.unhealthy_hosts_high.metric }}"
+    period: "{{ alarms.elb.unhealthy_hosts_high.period }}"
+    evaluation_periods: "{{ alarms.elb.unhealthy_hosts_high.evaluation_periods }}"
+  tags:
+    - "us-east-1"
+    - "elb-alarm"
+
+- name: "US East 1 ELB Service FOO Alarm: Latency High"
+  ec2_metric_alarm:
+    region: "us-east-1"
+    alarm_actions: "{{ sns_topics_arns.us_east_1.pager_duty }}"
+    namespace: "{{ alarms.elb.namespace }}"
+    state: "present"
+    name: "{{ elbs.us_east_1.service_foo.name }}.{{ alarms.elb.latency_high.name }}"
+    dimensions: "LoadBalancerName={{ elbs.us_east_1.service_foo.name }}"
+    threshold: "{{ alarms.elb.latency_high.threshold }}"
+    comparison: "{{ alarms.elb.latency_high.comparison }}"
+    statistic : "{{ alarms.elb.latency_high.statistic }}"
+    metric: "{{ alarms.elb.latency_high.metric }}"
+    period: "{{ alarms.elb.latency_high.period }}"
+    evaluation_periods: "{{ alarms.elb.latency_high.evaluation_periods }}"
+  tags:
+    - "us-east-1"
+    - "elb-alarm"
+
+# US East 1a ASGs
+- name: "US East 1a LC Service FOO"
+  ec2_lc:
+    assign_public_ip: true
+    name: "{{ autoscaling_groups.us_east_1.service_foo.name }}.launch-config"
+    image_id: "{{ amis.us_east_1.hvm }}"
+    instance_type: "{{ instances.service_foo.type }}"
+    region: "us-east-1"
+    security_groups:
+      - "{{ sec_group_us_east_1_0_default.group_id }}"
+      - "{{ sec_group_us_east_1_0_service_foo.group_id }}"
+    user_data: "{{ instances.service_foo.user_data.us_east_1 }}"
+  register: "us_east_1a_lc_service_foo"
+  tags:
+    - "us-east-1"
+
+- name: "US East 1a ASG Service FOO"
+  ec2_asg:
+    availability_zones:
+      - "{{ subnets.us_east_1.a_main_test.az }}"
+    name: "{{ autoscaling_groups.us_east_1.service_foo.name }}"
+    load_balancers: "{{ elbs.us_east_1.service_foo.name }}"
+    launch_config_name: "{{ us_east_1a_lc_service_foo.name }}"
+    min_size: "{{ autoscaling_groups.us_east_1.service_foo.size.min }}"
+    max_size: "{{ autoscaling_groups.us_east_1.service_foo.size.max }}"
+    region: "us-east-1"
+    vpc_zone_identifier: "{{ subnet_maps_us_east_1[subnets.us_east_1.a_main_test.cidr] }}"
+  register: "us_east_1a_asg_service_foo"
+  tags:
+    - "us-east-1"
+
+# US East 1d ASGs
+- name: "US East 1d LC Service FOO"
+  ec2_lc:
+    assign_public_ip: true
+    name: "{{ autoscaling_groups.us_east_1.service_foo.name }}.launch-config"
+    image_id: "{{ amis.us_east_1.hvm }}"
+    instance_type: "{{ instances.service_foo.type }}"
+    region: "us-east-1"
+    security_groups:
+      - "{{ sec_group_us_east_1_0_default.group_id }}"
+      - "{{ sec_group_us_east_1_0_service_foo.group_id }}"
+    user_data: "{{ instances.service_foo.user_data.us_east_1 }}"
+  register: "us_east_1d_lc_service_foo"
+  tags:
+    - "us-east-1"
+
+- name: "US East 1d ASG Service FOO"
+  ec2_asg:
+    availability_zones:
+      - "{{ subnets.us_east_1.d_main_test.az }}"
+    name: "{{ autoscaling_groups.us_east_1.service_foo.name }}"
+    load_balancers: "{{ elbs.us_east_1.service_foo.name }}"
+    launch_config_name: "{{ us_east_1e_lc_service_foo.name }}"
+    min_size: "{{ autoscaling_groups.us_east_1.service_foo.size.min }}"
+    max_size: "{{ autoscaling_groups.us_east_1.service_foo.size.max }}"
+    region: "us-east-1"
+    vpc_zone_identifier: "{{ subnet_maps_us_east_1[subnets.us_east_1.d_main_test.cidr] }}"
+  register: "us_east_1d_asg_service_foo"
+  tags:
+    - "us-east-1"
+
+################################################################################
+#                            EU West 1                                         #
+################################################################################
+

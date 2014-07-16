@@ -1,0 +1,100 @@
+---
+
+################################################################################
+# Creating all security groups and registering their IDs
+# Do definition of rules later on
+################################################################################
+
+- name: "Initialize test security group "
+  ec2_group:
+    # ADDED FEATURE NOT MERGED
+    # http://git.io/usjgkg
+    create_group_only: True
+
+    name: "{{ security_groups.us_east_1.test.name }}"
+    description: "{{ security_groups.us_east_1.test.description }}"
+    # This is why this role depends on the network role
+    vpc_id: "{{ us_east_1_vpc.vpc_id }}"
+
+    region: "us-east-1"
+    state: "present"
+  register: "sec_group_us_east_1_0_test"
+  tags:
+    - "us-east-1"
+    - "sec-group"
+    - "test"
+
+- name: "Set tag on test security group"
+  ec2_tag:
+    region: "us-east-1"
+    resource: "{{ sec_group_us_east_1_0_test.group_id }}"
+    tags:
+      Name: "{{ security_groups.us_east_1.test.name }}"
+  tags:
+    - "us-east-1"
+    - "sec-group"
+    - "test"
+
+- name: "Initialize default security group "
+  ec2_group:
+    create_group_only: True
+    name: "{{ security_groups.us_east_1.default.name }}"
+    description: "{{ security_groups.us_east_1.default.description }}"
+    vpc_id: "{{ us_east_1_vpc.vpc_id }}"
+
+    region: "us-east-1"
+    state: "present"
+  register: "sec_group_us_east_1_0_default"
+  tags:
+    - "us-east-1"
+    - "sec-group"
+    - "default"
+
+- name: "Set tag on default security group"
+  ec2_tag:
+    region: "us-east-1"
+    resource: "{{ sec_group_us_east_1_0_default.group_id }}"
+    tags:
+      Name: "{{ security_groups.us_east_1.default.name }}"
+  tags:
+    - "us-east-1"
+    - "sec-group"
+    - "default"
+
+################################################################################
+# Add rules to existing groups.
+################################################################################
+
+- name: "Add rules to test security group"
+  ec2_group:
+    name: "{{ security_groups.us_east_1.test.name }}"
+    description: "{{ security_groups.us_east_1.test.description }}"
+    vpc_id: "{{ us_east_1_vpc.vpc_id }}"
+    region: "us-east-1"
+    rules:
+      # Iteration here is not possible at the moment
+      # See https://groups.google.com/forum/#!topic/ansible-project/a8y1v2-R8Zw
+      # For jinja template trick
+      - proto: "tcp"
+        from_port: "{{ service_ports.puppet.http }}"
+        to_port: "{{ service_ports.puppet.http }}"
+        # And now you see why we need to initialize the groups before adding the
+        # rules, i.e. we're cross referencing the groups in the rules themselves
+        group_id: "{{ sec_group_us_east_1_0_default.group_id }}"
+      - proto: "tcp"
+        from_port: "{{ service_ports.puppet.service }}"
+        to_port: "{{ service_ports.puppet.service }}"
+        group_id: "{{ sec_group_us_east_1_0_default.group_id }}"
+
+      # Foo bar
+      - proto: "tcp"
+        from_port: "{{ service_ports.puppet.service }}"
+        to_port: "{{ service_ports.puppet.service }}"
+        cidr_ip: "{{ particular_ips.foo.bar }}"
+
+    state: "present"
+  tags:
+    - "us-east-1"
+    - "sec-group"
+    - "test"
+

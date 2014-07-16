@@ -1,0 +1,24 @@
+---
+- name: "Service Bar instances"
+  ec2:
+    assign_public_ip: true
+    count_tag:
+      ansible_managed: "{{ instances.ansible_managed.tag }}"
+      apps: "{{ instances.service_bar.apps_tag }}"
+    exact_count: "{{ instances.service_bar.count }}"
+    group_id:
+      - "{{ sec_group_us_east_1_0_default.group_id }}"
+      - "{{ sec_group_us_east_1_0_service_bar.group_id }}"
+    image: "{{ amis.us_east_1.hvm }}"
+    instance_tags:
+      ansible_managed: "{{ instances.ansible_managed.tag }}"
+      apps: "{{ instances.service_bar.apps_tag }}"
+    instance_type: "{{ instances.service_bar.type }}"
+    region: "us-east-1"
+    user_data: "{{ instances.service_bar.user_data }}"
+    vpc_subnet_id: "{{ subnet_maps_us_east_1[subnets.us_east_1.a_main_test.cidr] }}"
+    wait: true
+  register: "us_east_1_service_bar"
+  tags:
+    - "instance"
+    - "service_bar"

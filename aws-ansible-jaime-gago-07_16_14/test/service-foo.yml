@@ -1,0 +1,15 @@
+---
+- hosts: localhost
+  connection: local
+  gather_facts: False
+
+  pre_tasks:
+      - name: "Testing AWS keys in env match by looking for ansible S3 bucket"
+        s3: >
+          bucket={{ px_prod_ansible_check_bucket }}
+          object={{ px_prod_ansible_check_key }}
+          mode=geturl
+        always_run: True
+
+  roles:
+    - service-foo-asg
